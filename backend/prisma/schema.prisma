@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -20,8 +21,57 @@ model User {
   updatedAt DateTime @updatedAt                     // Last time account was updated
   
   // Relationships
-  habits    Habit[]                                 // One user has many habits
-  circles   CircleMember[]                          // One user can be in many circles
+  habits       Habit[]                                 // One user has many habits
+  circles      CircleMember[]                          // One user can be in many circles
+  ownedCircles Circle[]       @relation("CircleOwner") // One user can own many circles
   
   @@map("users")                                     // Table name in database
+}
+
+// Habit Model - stores habit tracking data
+model Habit {
+  id               String   @id @default(uuid())           // Unique ID for each habit
+  name             String                                  // Habit name (e.g., "Morning meditation")
+  period           String                                  // Daily, weekly, monthly, yearly
+  completionDates  String[]                                // Array of completion dates
+  userId           String                                  // Which user owns this habit
+  isPublic         Boolean  @default(false)               // Can others see this habit?
+  createdAt        DateTime @default(now())                // When habit was created
+  updatedAt        DateTime @updatedAt                     // Last time habit was updated
+  
+  // Relationships
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("habits")                                         // Table name in database
+}
+
+// Circle Model - stores social groups for sharing habits
+model Circle {
+  id          String   @id @default(uuid())           // Unique ID for each circle
+  name        String                                  // Circle name (e.g., "Fitness Buddies")
+  description String?                                 // Optional description
+  createdBy   String                                  // User who created the circle
+  createdAt   DateTime @default(now())                // When circle was created
+  updatedAt   DateTime @updatedAt                     // Last time circle was updated
+  
+  // Relationships
+  owner   User           @relation("CircleOwner", fields: [createdBy], references: [id])
+  members CircleMember[]
+  
+  @@map("circles")                                     // Table name in database
+}
+
+// CircleMember Model - tracks which users are in which circles
+model CircleMember {
+  id        String   @id @default(uuid())           // Unique ID for each membership
+  circleId  String                                  // Which circle
+  userId    String                                  // Which user
+  joinedAt  DateTime @default(now())                // When they joined
+  
+  // Relationships
+  circle    Circle  @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([circleId, userId])                      // User can only be in circle once
+  @@map("circle_members")                           // Table name in database
 }
