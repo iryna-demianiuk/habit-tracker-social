@@ -1,0 +1,27 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model - stores user account information
+model User {
+  id        String   @id @default(uuid())           // Unique ID for each user
+  email     String   @unique                        // Email must be unique
+  name      String                                  // User's display name
+  password  String                                  // Hashed password (never store plain text!)
+  createdAt DateTime @default(now())                // When account was created
+  updatedAt DateTime @updatedAt                     // Last time account was updated
+  
+  // Relationships
+  habits    Habit[]                                 // One user has many habits
+  circles   CircleMember[]                          // One user can be in many circles
+  
+  @@map("users")                                     // Table name in database
+}
